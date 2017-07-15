@@ -9,13 +9,19 @@ final class GWF_CreditsOrder extends GDO implements GWF_Orderable
 	public function getOrderCancelURL(GWF_User $user) { return url('CreditsOrder', 'Order'); }
 	public function getOrderSuccessURL(GWF_User $user) { return url('CreditsOrder', 'Order'); }
 	
-	public function getOrderTitle(string $iso) { return t('order_title_credits', [$this->getCredits()]); }
+	public function getOrderTitle(string $iso) { return t('card_title_credits_order', [$this->getCredits()]); }
 	public function getOrderPrice() { return $this->paymentCredits()->creditsToPrice($this->getCredits()); }
 	public function displayPrice() { return $this->paymentCredits()->displayPrice($this->getOrderPrice()); }
 	public function canPayOrderWith(GWF_PaymentModule $module) { return true; }
+	
 	public function onOrderPaid()
 	{
-		$this->getUser()->increase('user_credits', $this->getCredits());
+		$user = $this->getUser();
+		$credits = $this->getCredits();
+		$oldCredits = $user->getCredits();
+		$user->increase('user_credits', $credits);
+		$newCredits = $user->getCredits();
+		return GWF_Message::message('msg_credits_purchased', [$credits, $oldCredits, $newCredits]);
 	}
 	
 	###########
@@ -26,7 +32,7 @@ final class GWF_CreditsOrder extends GDO implements GWF_Orderable
 		return array(
 			GDO_AutoInc::make('co_id'),
 			GDO_User::make('co_user')->notNull(),
-			GDO_Int::make('co_credits')->unsigned()->notNull()->min($this->paymentCredits()->cfgMinPurchaseCredits())->label('purchase_credits'),
+			GDO_Int::make('co_credits')->unsigned()->notNull()->min($this->paymentCredits()->cfgMinPurchaseCredits())->label('credits'),
 		);
 	}
 	
@@ -44,4 +50,5 @@ final class GWF_CreditsOrder extends GDO implements GWF_Orderable
 	### Render ###
 	##############
 	public function renderCard() { return GWF_Template::modulePHP('PaymentCredits', 'card/credits_order.php', ['gdo' => $this]); }
+
 }

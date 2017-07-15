@@ -8,6 +8,15 @@
  */
 final class Module_PaymentCredits extends GWF_PaymentModule
 {
+	 #########################
+	### GWF_PaymentModule ###
+	########################
+	public function makePaymentButton(string $href)
+	{
+		$button = parent::makePaymentButton($href);
+		return $button->label('buy_paymentcredits', [GWF5::instance()->getSiteName()]);
+	}
+	
 	##################
 	### GWF_Module ###
 	##################
@@ -40,23 +49,6 @@ final class Module_PaymentCredits extends GWF_PaymentModule
 	public function creditsToPrice($credits) { return round($this->cfgConversionRateToCurrency() * $credits, 2); }
 	public function displayPrice($price) { return sprintf('%.02f %s', $price, GDO_Money::$CURR); }
 	public function displayCreditsPrice($credits) { return $this->displayPrice($this->creditsToPrice($credits)); }
-	
-	###############
-	### Startup ###
-	###############
-// 	public function onStartup()
-// 	{
-// 		$this->addJavascript('gwf-payment-credits.js');
-// 		$this->addCSS('gwf-payment-credits.css');
-// 		GWF_PaymentModule::registerPaymentModule($this);
-// 	}
-	
-// 	public function execute($methodname)
-// 	{
-// 		$payment = GWF_Module::loadModuleDB('Payment');
-// 		$payment->onInclude();
-// 		return parent::execute($methodname);
-// 	}
 	
 	###############
 	### Sidebar ###

@@ -6,17 +6,31 @@
  */
 final class PaymentCredits_Pay extends GWF_Method
 {
+	public function isAlwaysTransactional() { return true; }
+	
 	public function execute()
 	{
-		if (!($order = GWF_Order::getById(Common::getRequestString('order'))))
+		$user = GWF_User::current();
+		$module = Module_PaymentCredits::instance();
+
+		# Check
+		if ( (!($order = GWF_Order::getById(Common::getRequestString('order')))) ||
+			 ($order->isPaid()) || (!$order->isCreator($user)) )
 		{
-			return $this->error('err_order');
+			return $this->error('err_order')->add($order->redirectFailure());
 		}
-// 		return $this->renderOrder($order)->add($this->templateButton($order));
-	}
-	
-	private function templateButton(GWF_Order $order)
-	{
-		return $this->templatePHP('paybutton.php', ['order' => $order]);
+		
+		# Pay?
+		$price = $order->getPrice();
+		$credits = $module->priceToCredits($price);
+		if ($user->getCredits() < $credits)
+		{
+			$response = $this->error('err_no_credits', [$order->displayPrice(), $credits, $user->getCredits()]);
+			return $response->add($order->redirectFailure());
+		}
+		
+		# Pay and Exec
+		$user->increase('user_credits', -$credits);
+		return $order->executeOrder();
 	}
 }
